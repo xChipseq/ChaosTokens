@@ -26,13 +26,6 @@ public static class TokenEvents
     [RegisterEvent]
     public static void HandleVotesEventHandler(HandleVoteEvent @event)
     {
-        var target = MiscUtils.PlayerById(@event.TargetId);
-        if (target != null && target.HasModifier<TokenDeath>())
-        {
-            @event.Cancel();
-            return;
-        }
-        
         if (@event.VoteData.Owner.HasModifier<TokenVotes>())
         {
             @event.VoteData.SetRemainingVotes(0);
@@ -43,6 +36,16 @@ public static class TokenEvents
             }
 
             @event.Cancel();
+        }
+    }
+    
+    [RegisterEvent]
+    public static void MeetingSelectEventHandler(MeetingSelectEvent @event)
+    {
+        var target = MiscUtils.PlayerById((byte)@event.TargetId);
+        if (target != null && target.HasModifier<TokenDeath>())
+        {
+            @event.AllowSelect = false;
         }
     }
     
