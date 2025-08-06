@@ -18,7 +18,10 @@ public class ChaosTokensOptions : AbstractOptionGroup
     
     [ModdedNumberOption("Roll Cooldown", 5, 60, 2.5f, MiraNumberSuffixes.Seconds, formatString: "0.0")]
     public float RollCooldown { get; set; } = 5f;
-    
+
+
+    [ModdedToggleOption("Hand Tokens First Round")]
+    public bool TokensEnabledFirstRound { get; set; } = true;
     
     [ModdedNumberOption("Handed Tokens Min", 1, 15)]
     public float TokensMin { get; set; } = 5;

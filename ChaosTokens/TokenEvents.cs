@@ -81,8 +81,18 @@ public static class TokenEvents
     [RegisterEvent]
     public static void RoundStartEventHandler(RoundStartEvent @event)
     {
-        if (!OptionGroupSingleton<ChaosTokensOptions>.Instance.EnableChaosTokens) return;
-        if (!AmongUsClient.Instance.AmHost) return;
+        if (!OptionGroupSingleton<ChaosTokensOptions>.Instance.EnableChaosTokens)
+        {
+            return;
+        }
+        if (!AmongUsClient.Instance.AmHost)
+        {
+            return;
+        }
+        if (@event.TriggeredByIntro && !OptionGroupSingleton<ChaosTokensOptions>.Instance.TokensEnabledFirstRound)
+        {
+            return;
+        }
 
         int min = (int)OptionGroupSingleton<ChaosTokensOptions>.Instance.TokensMin;
         int max = (int)OptionGroupSingleton<ChaosTokensOptions>.Instance.TokensMax;
