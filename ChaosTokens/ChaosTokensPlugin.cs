@@ -20,7 +20,7 @@ namespace ChaosTokens;
 [ReactorModFlags(ModFlags.RequireOnAllClients)]
 public partial class ChaosTokensPlugin : BasePlugin, IMiraPlugin
 {
-    public static bool DevBuild => false; // enable for some cool features for testing
+    public static bool DevBuild => false; // enable for some cool features when testing
     public Harmony Harmony { get; } = new(Id);
     public ConfigFile GetConfigFile() => Config;
     public string OptionsTitleText => "Chaos\nTokens";

@@ -70,7 +70,7 @@ public static class ChaosTokensRpc
         {
             reroll = false;
             int random = Random.RandomRangeInt(0, Enum.GetValues<ChaosEffects>().Length);
-            Logger<ChaosTokensPlugin>.Warning($"Rolled effect for {player.Data.PlayerName} - {(ChaosEffects)random}");
+            //Logger<ChaosTokensPlugin>.Warning($"Rolled effect for {player.Data.PlayerName} - {(ChaosEffects)random}");
             switch ((ChaosEffects)random)
             {
                 case ChaosEffects.Defense:
@@ -272,7 +272,7 @@ public static class ChaosTokensRpc
     {
         if (!player.TryGetModifier<ChaosTokenModifier>(out var chaosTokenModifier))
         {
-            Logger<ChaosTokensPlugin>.Error($"Cannot increase tokens: player {player.Data.PlayerName} has no modifier, adding one");
+            //Logger<ChaosTokensPlugin>.Error($"Cannot increase tokens: player {player.Data.PlayerName} has no modifier, adding one");
             chaosTokenModifier = player.AddModifier<ChaosTokenModifier>(amount, showNotification);
         }
         else
