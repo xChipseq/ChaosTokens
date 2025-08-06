@@ -5,7 +5,7 @@
   	<a href="https://github.com/xChipseq/ChaosTokens/releases"> <img alt="Downloads" src="https://img.shields.io/github/downloads/xChipseq/ChaosTokens/total?style=flat&logo=github&labelColor=%23212024&color=%2343ab59">
   	<a href="https://github.com/xChipseq/ChaosTokens/stargazers"> <img alt="License" src="https://img.shields.io/github/stars/xChipseq/ChaosTokens?style=flate&logo=github&labelColor=%23212024&color=%2343ab59">
   	<a href="https://github.com/xChipseq/ChaosTokens/releases/latest"> <img alt="Latest Release" src="https://img.shields.io/github/v/release/xChipseq/ChaosTokens?include_prereleases&sort=date&display_name=tag&style=flat&logo=github&labelColor=%23212024&color=%2343ab59">
-  	<a href="https://github.com/xChipseq/ChaosTokens/blob/master/LICENSE.md"> <img alt="License" src="https://img.shields.io/github/license/xChipseq/ChaosTokens?style=flat&labelColor=%23212024&color=%2343ab59">
+  	<a href="https://github.com/xChipseq/ChaosTokens/blob/main/LICENSE"> <img alt="License" src="https://img.shields.io/github/license/xChipseq/ChaosTokens?style=flat&labelColor=%23212024&color=%2343ab59">
   	<a href="https://ko-fi.com/chipseq"> <img alt="Ko-Fi" src="https://img.shields.io/badge/support_me-F16061?style=flat&logo=ko-fi&logoColor=white">
   </p>
 </div>
