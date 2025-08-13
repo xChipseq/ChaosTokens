@@ -10,6 +10,9 @@ public enum ChaosEffects
     Transparent,
     LowerCooldown,
     MediumIsReal,
+    KillButton,
+    Tasks,
+    Vision,
     
     // Negative
     RevealSelf,
@@ -18,6 +21,8 @@ public enum ChaosEffects
     Drunk,
     FakeRevealSelf,
     Hyperactive,
+    Nausea,
+    Colorblind,
     
     // Neutral
     RevealRandom,
@@ -25,4 +30,5 @@ public enum ChaosEffects
     RoleSwap,
     Revive,
     RandomModifier,
+    NoSkip,
 }

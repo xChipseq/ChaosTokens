@@ -3,9 +3,8 @@ using System.Collections;
 using System.Linq;
 using AmongUs.GameOptions;
 using ChaosTokens.Modifiers;
-using HarmonyLib;
-using Il2CppInterop.Runtime.Attributes;
-using MiraAPI.Events;
+using ChaosTokens.Modifiers.Effects;
+using ChaosTokens.Options;
 using MiraAPI.GameOptions;
 using MiraAPI.Hud;
 using MiraAPI.Modifiers;
@@ -17,15 +16,11 @@ using Reactor.Utilities;
 using Reactor.Utilities.Extensions;
 using TownOfUs;
 using TownOfUs.Events;
-using TownOfUs.Events.TouEvents;
 using TownOfUs.Modifiers;
-using TownOfUs.Modifiers.Crewmate;
 using TownOfUs.Modifiers.Game.Alliance;
 using TownOfUs.Modifiers.Impostor;
 using TownOfUs.Modules;
 using TownOfUs.Modules.Anims;
-using TownOfUs.Options.Roles.Crewmate;
-using TownOfUs.Roles;
 using TownOfUs.Roles.Crewmate;
 using TownOfUs.Utilities;
 using UnityEngine;
@@ -42,7 +37,6 @@ public enum RpcCalls : uint
     TokenPosSwap,
     TokenRoleSwap,
     TokenRevive,
-    TokenBlackmail,
 }
 
 public static class ChaosTokensRpc
@@ -58,210 +52,14 @@ public static class ChaosTokensRpc
             return;
         }
         
-        var playerRole = player.Data.Role;
-        
         bool reroll = true;
-        void Reroll()
-        {
-            reroll = true;
-        }
-        
         do
         {
             reroll = false;
             int random = Random.RandomRangeInt(0, Enum.GetValues<ChaosEffects>().Length);
             //Logger<ChaosTokensPlugin>.Warning($"Rolled effect for {player.Data.PlayerName} - {(ChaosEffects)random}");
-            switch ((ChaosEffects)random)
-            {
-                case ChaosEffects.Defense:
-                    if (player.HasModifier<TokenProtection>())
-                    {
-                        Reroll();
-                        break;
-                    }
-                    player.RpcAddModifier<TokenProtection>((float)Random.RandomRange(15, 60));
-                    break;
-                case ChaosEffects.Speed:
-                    if (player.HasModifier<TokenSpeed>())
-                    {
-                        Reroll();
-                        break;
-                    }
-                    player.RpcAddModifier<TokenSpeed>(Random.RandomRange(1.25f, 3f));
-                    break;
-                case ChaosEffects.Votes:
-                    if (player.HasModifier<TokenVotes>())
-                    {
-                        Reroll();
-                        break;
-                    }
-                    player.RpcAddModifier<TokenVotes>();
-                    break;
-                case ChaosEffects.MoreTokens:
-                    player.RpcIncreaseTokens(Random.RandomRangeInt(1, 3), true);
-                    break;
-                case ChaosEffects.Transparent:
-                    if (player.HasModifier<TokenTransparent>())
-                    {
-                        Reroll();
-                        break;
-                    }
-                    player.RpcAddModifier<TokenTransparent>(Random.RandomRange(0f, 0.8f));
-                    break;
-                case ChaosEffects.LowerCooldown:
-                    if (player.HasModifier<TokenCooldown>())
-                    {
-                        Reroll();
-                        break;
-                    }
-                    player.RpcAddModifier<TokenCooldown>(Random.RandomRange(0.5f, 1f));
-                    break;
-                case ChaosEffects.MediumIsReal:
-                    if (player.HasModifier<TokenMedium>())
-                    {
-                        Reroll();
-                        break;
-                    }
-                    player.RpcAddModifier<TokenMedium>();
-                    break;
-                
-                
-                case ChaosEffects.RevealSelf:
-                    if (player.HasModifier<TokenReveal>())
-                    {
-                        Reroll();
-                        break;
-                    }
-                    player.RpcAddModifier<TokenReveal>(player.Data.Role.Role, (byte)255, false);
-                    break;
-                case ChaosEffects.Death:
-                    if (player.HasModifier<TokenDeath>())
-                    {
-                        Reroll();
-                        break;
-                    }
-                    player.RpcAddModifier<TokenDeath>();
-                    break;
-                case ChaosEffects.Blackmailed:
-                    if (player.HasModifier<BlackmailedModifier>())
-                    {
-                        Reroll();
-                        break;
-                    }
-                    RpcTokenBlackmail(player);
-                    break;
-                case ChaosEffects.Drunk:
-                    if (player.HasModifier<TokenDrunk>())
-                    {
-                        Reroll();
-                        break;
-                    }
-                    player.RpcAddModifier<TokenDrunk>();
-                    break;
-                case ChaosEffects.FakeRevealSelf:
-                    // The player will reveal as ANY role
-                    // disabled, vanilla, ghost roles included
-                    // why? because it's funny
-                    if (player.HasModifier<TokenReveal>())
-                    {
-                        Reroll();
-                        break;
-                    }
-                    player.RpcAddModifier<TokenReveal>(RoleManager.Instance.AllRoles.Random().Role, (byte)255, true);
-                    break;
-                case ChaosEffects.Hyperactive:
-                    if (player.HasModifier<TokenHyperactive>())
-                    {
-                        Reroll();
-                        break;
-                    }
-                    player.RpcAddModifier<TokenHyperactive>();
-                    break;
+            reroll = ApplyEffect(player, (ChaosEffects)random);
 
-                
-                case ChaosEffects.RevealRandom:
-                    var revealVictims = Helpers.GetAlivePlayers()
-                        .Where(x => x.PlayerId != player.PlayerId)
-                        .Where(x => !x.HasModifier<TokenReveal>())
-                        .ToList();
-
-                    if (revealVictims.Count <= 0)
-                    {
-                        Reroll();
-                        break;
-                    }
-
-                    var revealVictim = revealVictims.Random();
-                    revealVictim.RpcAddModifier<TokenReveal>(revealVictim.Data.Role.Role, player.PlayerId,
-                        false);
-                    break;
-                case ChaosEffects.PositionSwap:
-                    var swapVictim = Helpers.GetAlivePlayers()
-                        .Where(x => !x.Data.IsDead)
-                        .Where(x => x.PlayerId != player.PlayerId)
-                        .Random();
-                    RpcTokenPositionSwap(player, swapVictim);
-                    break;
-                case ChaosEffects.RoleSwap:
-                    // This will be annoying as hell but the players have to be on the same team so it's kind of balanced
-                    ModdedRoleTeams playerTeam;
-                    if (playerRole is ICustomRole customRole)
-                    {
-                        playerTeam = customRole.Team;
-                    }
-                    else
-                    {
-                        playerTeam = (ModdedRoleTeams)playerRole.TeamType;
-                    }
-
-                    var roleSwapVictims = Helpers.GetAlivePlayers().Where(potentialVictim =>
-                    {
-                        if (potentialVictim.PlayerId == player.PlayerId) return false;
-
-                        var potentialVictimRole = potentialVictim.Data.Role;
-                        if (potentialVictimRole is ICustomRole customVictimRole)
-                        {
-                            return customVictimRole.Team == playerTeam;
-                        }
-
-                        if (playerTeam == ModdedRoleTeams.Custom)
-                            return false;
-
-                        return potentialVictimRole.TeamType == (RoleTeamTypes)playerTeam;
-                    }).ToList();
-
-                    if (roleSwapVictims.Count <= 0)
-                    {
-                        Reroll();
-                        break;
-                    }
-
-                    RpcTokenRoleSwap(player, roleSwapVictims.Random());
-                    break;
-                case ChaosEffects.Revive:
-                    var canBeRevived = PlayerControl.AllPlayerControls
-                        .ToArray()
-                        .Where(x => x.Data.IsDead && !x.Data.Disconnected)
-                        .Where(x => x.GetModifier<DeathHandlerModifier>()?.RoundOfDeath == DeathEventHandlers.CurrentRound)
-                        .ToList();
-
-                    if (canBeRevived.Count <= 0)
-                    {
-                        Reroll();
-                        break;
-                    }
-
-                    RpcTokenRevive(player, canBeRevived.Random());
-                    break;
-                case ChaosEffects.RandomModifier:
-                    if (player.HasModifier<TokenRandomModifier>())
-                    {
-                        Reroll();
-                        break;
-                    }
-                    player.RpcAddModifier<TokenRandomModifier>();
-                    break;
-            }
         } while (reroll);
 
         RpcDecreaseTokens(player, 1);
@@ -348,19 +146,330 @@ public static class ChaosTokensRpc
             Utils.Notification("<b>You revived a random person!</b>");
         }
     }
-    
-    [MethodRpc((uint)RpcCalls.TokenBlackmail)]
-    public static void RpcTokenBlackmail(PlayerControl player)
+
+    internal static bool ApplyEffect(PlayerControl player, ChaosEffects effect)
     {
-        if (player.AmOwner)
+        bool reroll = false;
+        void Reroll()
         {
-            Utils.Notification("<b>You are blackmailed!</b>");
+            reroll = true;
+        }
+        
+        var playerRole = player.Data.Role;
+        int revealCount = ModifierUtils.GetPlayersWithModifier<RevealModifier>().Count();
+
+        switch (effect)
+        {
+            case ChaosEffects.Defense:
+                if (player.HasModifier<TokenDefense>())
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenDefense>((float)Random.RandomRange(15, 60));
+                break;
+            case ChaosEffects.Speed:
+                if (player.HasModifier<TokenSpeed>())
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenSpeed>(Random.RandomRange(1.25f, 3f));
+                break;
+            case ChaosEffects.Votes:
+                if (player.HasModifier<TokenVotes>())
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenVotes>();
+                break;
+            case ChaosEffects.MoreTokens:
+                player.RpcIncreaseTokens(Random.RandomRangeInt(1, 3), true);
+                break;
+            case ChaosEffects.Transparent:
+                if (player.HasModifier<TokenTransparent>())
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenTransparent>(Random.RandomRange(0f, 0.8f));
+                break;
+            case ChaosEffects.LowerCooldown:
+                if (player.HasModifier<TokenCooldown>())
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenCooldown>(Random.RandomRange(0.5f, 1f));
+                break;
+            case ChaosEffects.MediumIsReal:
+                if (player.HasModifier<TokenMedium>())
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenMedium>();
+                break;
+            case ChaosEffects.KillButton:
+                if (player.HasModifier<TokenOneTimeKill>())
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenOneTimeKill>();
+                break;
+            case ChaosEffects.Tasks:
+                if (player.HasModifier<TokenTasks>())
+                {
+                    Reroll();
+                    break;
+                }
+                
+                if (!Utils.GetUncompletedTasks(player).Any())
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenTasks>();
+                break;
+            case ChaosEffects.Vision:
+                if (player.HasModifier<TokenVision>())
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenVision>(Random.RandomRange(1f, 2f));
+                break;
+
+
+            case ChaosEffects.RevealSelf:
+                if (player.HasModifier<TokenReveal>())
+                {
+                    Reroll();
+                    break;
+                }
+                
+                if (revealCount != 0 && revealCount >= OptionGroupSingleton<BalanceOptions>.Instance.MaxRoleReveals)
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenReveal>(player.Data.Role.Role, player.Data.PlayerId);
+                break;
+            case ChaosEffects.Death:
+                if (player.HasModifier<TokenDeath>())
+                {
+                    Reroll();
+                    break;
+                }
+
+                if (OptionGroupSingleton<BalanceOptions>.Instance.DeathDisabled)
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenDeath>();
+                break;
+            case ChaosEffects.Blackmailed:
+                if (player.HasModifier<TokenBlackmail>() || player.HasModifier<BlackmailedModifier>())
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenBlackmail>(player.PlayerId);
+                break;
+            case ChaosEffects.Drunk:
+                if (player.HasModifier<TokenDrunk>())
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenDrunk>();
+                break;
+            case ChaosEffects.FakeRevealSelf:
+                // The player will reveal as ANY role
+                // disabled, vanilla, ghost roles included
+                // why? because it's funny
+                if (player.HasModifier<TokenReveal>())
+                {
+                    Reroll();
+                    break;
+                }
+                
+                if (revealCount != 0 && revealCount >= OptionGroupSingleton<BalanceOptions>.Instance.MaxRoleReveals)
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenReveal>(RoleManager.Instance.AllRoles.Random().Role, player.Data.PlayerId);
+                break;
+            case ChaosEffects.Hyperactive:
+                if (player.HasModifier<TokenHyperactive>())
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenHyperactive>();
+                break;
+            case ChaosEffects.Nausea:
+                Reroll();
+                break;
+                
+                if (player.HasModifier<TokenColorblind>() || player.HasModifier<TokenNausea>())
+                {
+                    Reroll();
+                    break;
+                }
+
+                if (OptionGroupSingleton<BalanceOptions>.Instance.ScreenEffectsDisabled)
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenNausea>();
+                break;
+            case ChaosEffects.Colorblind:
+                if (player.HasModifier<TokenColorblind>() || player.HasModifier<TokenNausea>())
+                {
+                    Reroll();
+                    break;
+                }
+
+                if (OptionGroupSingleton<BalanceOptions>.Instance.ScreenEffectsDisabled)
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenColorblind>();
+                break;
+
+
+            case ChaosEffects.RevealRandom:
+                if (revealCount != 0 && revealCount >= OptionGroupSingleton<BalanceOptions>.Instance.MaxRoleReveals)
+                {
+                    Reroll();
+                    break;
+                }
+
+                var revealVictims = Helpers.GetAlivePlayers()
+                    .Where(x => x.PlayerId != player.PlayerId)
+                    .Where(x => !x.HasModifier<RevealModifier>())
+                    .ToList();
+
+                if (revealVictims.Count <= 0)
+                {
+                    Reroll();
+                    break;
+                }
+
+                var revealVictim = revealVictims.Random();
+                revealVictim.RpcAddModifier<TokenReveal>(revealVictim.Data.Role.Role, player.PlayerId);
+                break;
+            case ChaosEffects.PositionSwap:
+                var swapVictim = Helpers.GetAlivePlayers()
+                    .Where(x => !x.Data.IsDead)
+                    .Where(x => x.PlayerId != player.PlayerId)
+                    .Random();
+                RpcTokenPositionSwap(player, swapVictim);
+                break;
+            case ChaosEffects.RoleSwap:
+                // This will be annoying as hell but the players have to be on the same team so it's kind of balanced
+                ModdedRoleTeams playerTeam;
+                if (playerRole is ICustomRole customRole)
+                {
+                    playerTeam = customRole.Team;
+                }
+                else
+                {
+                    playerTeam = (ModdedRoleTeams)playerRole.TeamType;
+                }
+
+                var roleSwapVictims = Helpers.GetAlivePlayers().Where(potentialVictim =>
+                {
+                    if (potentialVictim.PlayerId == player.PlayerId) return false;
+
+                    var potentialVictimRole = potentialVictim.Data.Role;
+                    if (potentialVictimRole is ICustomRole customVictimRole)
+                    {
+                        return customVictimRole.Team == playerTeam;
+                    }
+
+                    if (playerTeam == ModdedRoleTeams.Custom)
+                        return false;
+
+                    return potentialVictimRole.TeamType == (RoleTeamTypes)playerTeam;
+                }).ToList();
+
+                if (roleSwapVictims.Count <= 0)
+                {
+                    Reroll();
+                    break;
+                }
+
+                RpcTokenRoleSwap(player, roleSwapVictims.Random());
+                break;
+            case ChaosEffects.Revive:
+                if (OptionGroupSingleton<BalanceOptions>.Instance.ReviveDisabled)
+                {
+                    Reroll();
+                    break;
+                }
+                
+                var canBeRevived = PlayerControl.AllPlayerControls
+                    .ToArray()
+                    .Where(x => x.Data.IsDead && !x.Data.Disconnected)
+                    .Where(x => x.GetModifier<DeathHandlerModifier>()?.RoundOfDeath == DeathEventHandlers.CurrentRound)
+                    .ToList();
+
+                if (canBeRevived.Count <= 0)
+                {
+                    Reroll();
+                    break;
+                }
+
+                RpcTokenRevive(player, canBeRevived.Random());
+                break;
+            case ChaosEffects.RandomModifier:
+                if (player.HasModifier<TokenRandomModifier>())
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenRandomModifier>();
+                break;
+            case ChaosEffects.NoSkip:
+                if (player.HasModifier<TokenNoSkip>())
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenNoSkip>();
+                break;
         }
 
-        player.AddModifier<BlackmailedModifier>(player.PlayerId);
+        return reroll;
     }
     
-    [HideFromIl2Cpp]
     public static IEnumerator CoRevivePlayer(PlayerControl dead)
     {
         var roleWhenAlive = dead.GetRoleWhenAlive();

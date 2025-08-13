@@ -3,7 +3,6 @@ using BepInEx.Configuration;
 using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
 using MiraAPI.PluginLoading;
-using MiraAPI.Utilities.Assets;
 using Reactor;
 using Reactor.Networking;
 using Reactor.Networking.Attributes;
@@ -26,14 +25,15 @@ public partial class ChaosTokensPlugin : BasePlugin, IMiraPlugin
     public string OptionsTitleText => "Chaos\nTokens";
     
     public static Color MainColor => new Color32(221, 178, 68, 255);
-    public static LoadableAsset<Sprite> DiceButton { get; } = new LoadableResourceAsset("ChaosTokens.Resources.DiceButton.png"); 
-    public static LoadableAsset<Sprite> DiceSprite { get; } = new LoadableResourceAsset("ChaosTokens.Resources.Dice.png"); 
-    public static LoadableAsset<Sprite> TokenDeathSprite { get; } = new LoadableResourceAsset("ChaosTokens.Resources.TokenDeath.png", 300);
-    
 
     public override void Load()
     {
         Harmony.PatchAll();
         ReactorCredits.Register<ChaosTokensPlugin>(ReactorCredits.AlwaysShow);
+
+        if (DevBuild)
+        {
+            AddComponent<TokenDebugWindow>();
+        }
     }
 }

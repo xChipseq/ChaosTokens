@@ -3,28 +3,28 @@ using System.Linq;
 using MiraAPI.Modifiers;
 using MiraAPI.Modifiers.Types;
 using MiraAPI.PluginLoading;
-using MiraAPI.Utilities;
 using Reactor.Utilities.Extensions;
 using TownOfUs;
-using UnityEngine;
 
-namespace ChaosTokens.Modifiers;
+namespace ChaosTokens.Modifiers.Effects;
 
-public sealed class TokenRandomModifier : BaseModifier
+public sealed class TokenRandomModifier : TokenEffect
 {
+    public override ChaosEffects Effect => ChaosEffects.RandomModifier;
     public override string ModifierName => "Token Random Modifier";
-    public override bool HideOnUi => true;
+    public override string Notification => "Your received a random modifier!";
+    public override bool Negative => false;
 
     private Type ModifierType;
 
     public override void OnActivate()
     {
-        if (Player.AmOwner)
-        {
-            Utils.Notification("<b>Your received a random modifier!</b>");
-        }
+        base.OnActivate();
 
-        if (!AmongUsClient.Instance.AmHost) return;
+        if (!AmongUsClient.Instance.AmHost)
+        {
+            return;
+        }
 
         var modifier = typeof(TownOfUsPlugin).Assembly
             .GetTypes()
