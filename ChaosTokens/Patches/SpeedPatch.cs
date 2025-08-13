@@ -1,4 +1,4 @@
-﻿using ChaosTokens.Modifiers;
+﻿using ChaosTokens.Modifiers.Effects;
 using HarmonyLib;
 using MiraAPI.Modifiers;
 using TownOfUs.Utilities.Appearances;

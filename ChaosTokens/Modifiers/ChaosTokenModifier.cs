@@ -1,7 +1,6 @@
 ﻿using ChaosTokens.Buttons;
 using MiraAPI.Hud;
 using MiraAPI.Modifiers;
-using MiraAPI.Utilities;
 using MiraAPI.Utilities.Assets;
 using UnityEngine;
 
@@ -10,7 +9,7 @@ namespace ChaosTokens.Modifiers;
 public class ChaosTokenModifier(int amount = 1, bool showNotification = true) : BaseModifier
 {
     public override string ModifierName => $"Chaos Token{(Tokens > 1 ? "s" : string.Empty)}";
-    public override LoadableAsset<Sprite> ModifierIcon => ChaosTokensPlugin.DiceSprite;
+    public override LoadableAsset<Sprite> ModifierIcon => Assets.DiceSprite;
     public override string GetDescription() => $"Take your chances!\n<b>Tokens left: {Tokens}</b>";
 
     public int Tokens { get; private set; } = 0;

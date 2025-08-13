@@ -1,6 +1,9 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using AmongUs.GameOptions;
-using ChaosTokens.Modifiers;
+using ChaosTokens.Modifiers.Effects;
+using ChaosTokens.Options;
+using Cpp2IL.Core.Extensions;
 using HarmonyLib;
 using MiraAPI.Events;
 using MiraAPI.Events.Vanilla.Gameplay;
@@ -10,10 +13,10 @@ using MiraAPI.GameOptions;
 using MiraAPI.Modifiers;
 using MiraAPI.Networking;
 using MiraAPI.Utilities;
+using MiraAPI.Voting;
 using Reactor.Utilities;
 using Reactor.Utilities.Extensions;
 using TownOfUs.Modifiers;
-using TownOfUs.Modules;
 using TownOfUs.Utilities;
 using UnityEngine;
 
@@ -21,31 +24,43 @@ namespace ChaosTokens;
 
 public static class TokenEvents
 {
-    private static float DoubleTokenChance { get; set; } = OptionGroupSingleton<ChaosTokensOptions>.Instance.InitialDoubleTokenChance;
+    private static float DoubleTokenChance { get; set; } = OptionGroupSingleton<TokenHandingOptions>.Instance.InitialDoubleTokenChance;
+    private static readonly Dictionary<byte, float> PriorityTable = new();
     
     [RegisterEvent]
     public static void HandleVotesEventHandler(HandleVoteEvent @event)
     {
+        if (@event.TargetId == 253 && ModifierUtils.GetPlayersWithModifier<TokenNoSkip>().Any())
+        {
+            @event.Cancel();
+        }
+        
         if (@event.VoteData.Owner.HasModifier<TokenVotes>())
         {
             @event.VoteData.SetRemainingVotes(0);
 
-            for (var i = 0; i < Random.RandomRangeInt(2, 4); i++)
+            int votes = 1;
+            float chance = 100;
+
+            while (chance > 0)
+            {
+                if (Random.RandomRange(1, 100) < chance)
+                {
+                    votes++;
+                    chance -= Random.RandomRange(15, 35);
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            for (var i = 0; i < votes; i++)
             {
                 @event.VoteData.VoteForPlayer(@event.TargetId);
             }
 
             @event.Cancel();
-        }
-    }
-    
-    [RegisterEvent]
-    public static void MeetingSelectEventHandler(MeetingSelectEvent @event)
-    {
-        var target = MiscUtils.PlayerById((byte)@event.TargetId);
-        if (target != null && target.HasModifier<TokenDeath>())
-        {
-            @event.AllowSelect = false;
         }
     }
     
@@ -56,35 +71,49 @@ public static class TokenEvents
         {
             player.CustomMurder(player, MurderResultFlags.Succeeded, createDeadBody: false, showKillAnim: false);
             DeathHandlerModifier.UpdateDeathHandler(player, "Fate");
+            
+            // ToUM adds time when someone dies during a meeting, because of that the proceed anim is longer
+            // We add the time it subtracted to fix this
+            var timer = (int)OptionGroupSingleton<TownOfUs.Options.GeneralOptions>.Instance.AddedMeetingDeathTimer;
+            MeetingHud.Instance.discussionTimer += timer;
         });
 
         try
         {
+            MeetingHud.Instance.playerStates.Do(x => x.transform.FindChild("TokenDeathIcon").gameObject.DestroyImmediate());
             MeetingHud.Instance.playerStates.Do(x => x.transform.FindChild("TokenDeathIcon").gameObject.DestroyImmediate());
         }
         catch {} // don't care
     }
 
     [RegisterEvent]
+    public static void ProcessVotesEventHandler(ProcessVotesEvent @event)
+    {
+        if (@event.ExiledPlayer == null) return;
+
+        var player = MiscUtils.PlayerById(@event.ExiledPlayer.PlayerId);
+        if (player.HasModifier<TokenDeath>())
+        {
+            @event.ExiledPlayer = null;
+        }
+    }
+
+    [RegisterEvent]
     public static void EjectionEventHandler(EjectionEvent @event)
     {
-        foreach (var player in PlayerControl.AllPlayerControls)
+        ModifierUtils.GetActiveModifiers<TokenEffect>().Do(m =>
         {
-            if (player.HasModifier<TokenProtection>())
-                player.RemoveModifier<TokenProtection>();
-            if (player.HasModifier<TokenVotes>())
-                player.RemoveModifier<TokenVotes>();
-            if (player.HasModifier<TokenRandomModifier>())
-                player.RemoveModifier<TokenRandomModifier>();
-            if (player.HasModifier<TokenTransparent>())
-                player.RemoveModifier<TokenTransparent>();
-        }
+            if (m.RemoveAfterMeeting)
+            {
+                m.Player.RemoveModifier(m);
+            }
+        });
     }
 
     [RegisterEvent]
     public static void RoundStartEventHandler(RoundStartEvent @event)
     {
-        if (!OptionGroupSingleton<ChaosTokensOptions>.Instance.EnableChaosTokens)
+        if (!OptionGroupSingleton<GeneralOptions>.Instance.EnableChaosTokens)
         {
             return;
         }
@@ -92,43 +121,75 @@ public static class TokenEvents
         {
             return;
         }
-        if (@event.TriggeredByIntro && !OptionGroupSingleton<ChaosTokensOptions>.Instance.TokensEnabledFirstRound)
+        if (@event.TriggeredByIntro)
         {
-            return;
+            PriorityTable.Clear();
+            PlayerControl.AllPlayerControls
+                .ToArray()
+                .Do(p => PriorityTable.Add(p.PlayerId, 10));
+            
+            if (!OptionGroupSingleton<TokenHandingOptions>.Instance.TokensEnabledFirstRound)
+            {
+                return;
+            }
         }
 
-        int min = (int)OptionGroupSingleton<ChaosTokensOptions>.Instance.TokensMin;
-        int max = (int)OptionGroupSingleton<ChaosTokensOptions>.Instance.TokensMax;
+        int min = (int)OptionGroupSingleton<TokenHandingOptions>.Instance.TokensMin;
+        int max = (int)OptionGroupSingleton<TokenHandingOptions>.Instance.TokensMax;
+
+        if (max == 0)
+        {
+            max = int.MaxValue;
+        }
+
+        if (min > max)
+        {
+            min = max;
+        }
 
         var potentialPlayers = Helpers.GetAlivePlayers();
         potentialPlayers.Shuffle();
+        potentialPlayers = potentialPlayers.OrderBy(x => PriorityTable[x.PlayerId]).ToList();
+        
         int tokensToHandle = Mathf.Clamp(Random.RandomRangeInt(min, max), 0, potentialPlayers.Count);
-
-        foreach (var player in potentialPlayers)
+        foreach (var player in potentialPlayers.Clone())
         {
+            // Just to be sure
+            if (!PriorityTable.ContainsKey(player.PlayerId))
+            {
+                PriorityTable.Add(player.PlayerId, 10);
+            }
+            
+            // Reset when player gets a token
+            PriorityTable[player.PlayerId] = 10;
+            
             int tokens = 1;
             if (Random.RandomRangeInt(1, 100) < DoubleTokenChance && tokensToHandle > 1)
             {
                 tokens = 2;
+                PriorityTable[player.PlayerId] = 11; // double token decreases the priority
             }
 
-            if (player.TryGetModifier<ChaosTokenModifier>(out var modifier))
-            {
-                modifier.IncreaseTokens(tokens);
-            }
-            else
-            {
-                player.RpcAddModifier<ChaosTokenModifier>(tokens, true);
-            }
+            player.RpcIncreaseTokens(tokens, true);
             
             tokensToHandle -= tokens;
+            potentialPlayers.Remove(player);
             if (tokensToHandle <= 0)
             {
                 break;
             }
         }
         
-        DoubleTokenChance = Mathf.Clamp(DoubleTokenChance + OptionGroupSingleton<ChaosTokensOptions>.Instance.DoubleTokenIncrease, 0, 100);
+        // Players without a token get priority for the next handing
+        potentialPlayers.Do(p => PriorityTable[p.PlayerId]--);
+
+        // Simplest solution to ignore handing priority: reset everything if disabled
+        if (!OptionGroupSingleton<TokenHandingOptions>.Instance.TokenHandingPriority)
+        {
+            potentialPlayers.Do(p => PriorityTable[p.PlayerId] = 10);
+        }
+        
+        DoubleTokenChance = Mathf.Clamp(DoubleTokenChance + OptionGroupSingleton<TokenHandingOptions>.Instance.DoubleTokenIncrease, 0, 100);
     }
 
     [RegisterEvent]
@@ -136,7 +197,7 @@ public static class TokenEvents
     {
         var source = @event.Source;
         var target = @event.Target;
-        if (target.HasModifier<TokenProtection>())
+        if (target.HasModifier<TokenDefense>())
         {
             @event.Cancel();
             if (source.AmOwner)
