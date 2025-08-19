@@ -250,6 +250,15 @@ public static class ChaosTokensRpc
 
                 player.RpcAddModifier<TokenVision>(Random.RandomRange(1f, 2f));
                 break;
+            case ChaosEffects.Invisible:
+                if (player.HasModifier<TokenInvisible>())
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenInvisible>();
+                break;
 
 
             case ChaosEffects.RevealSelf:

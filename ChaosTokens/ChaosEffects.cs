@@ -13,6 +13,7 @@ public enum ChaosEffects
     KillButton,
     Tasks,
     Vision,
+    Invisible,
     
     // Negative
     RevealSelf,
