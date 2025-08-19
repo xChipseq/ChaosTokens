@@ -16,7 +16,7 @@ public class TokenDeath : TokenEffect
     public override void OnMeetingStart()
     {
         var playerPva = MeetingHud.Instance.playerStates.First(x => x.TargetPlayerId == Player.PlayerId);
-        var icon = GameObject.Instantiate(playerPva.XMark, playerPva.XMark.transform.parent);
+        var icon = Object.Instantiate(playerPva.XMark, playerPva.XMark.transform.parent);
         icon.name = "TokenDeathIcon";
         icon.transform.SetLocalZ(-5);
         icon.transform.localPosition += new Vector3(0.1f, -0.05f);
@@ -27,7 +27,7 @@ public class TokenDeath : TokenEffect
 
     public override void Update()
     {
-        if (MeetingHud.Instance)
+        if (MeetingHud.Instance && !Player.AmOwner)
         {
             MeetingMenu.Instances.Do(x => x.HideSingle(Player.PlayerId));
         }

@@ -148,18 +148,20 @@ public static class TokenEvents
         }
 
         var potentialPlayers = Helpers.GetAlivePlayers();
+        potentialPlayers.Do(p =>
+        {
+            // Just to be sure
+            if (!PriorityTable.ContainsKey(p.PlayerId))
+            {
+                PriorityTable.Add(p.PlayerId, 10);
+            }
+        });
         potentialPlayers.Shuffle();
         potentialPlayers = potentialPlayers.OrderBy(x => PriorityTable[x.PlayerId]).ToList();
         
         int tokensToHandle = Mathf.Clamp(Random.RandomRangeInt(min, max), 0, potentialPlayers.Count);
         foreach (var player in potentialPlayers.Clone())
         {
-            // Just to be sure
-            if (!PriorityTable.ContainsKey(player.PlayerId))
-            {
-                PriorityTable.Add(player.PlayerId, 10);
-            }
-            
             // Reset when player gets a token
             PriorityTable[player.PlayerId] = 10;
             
