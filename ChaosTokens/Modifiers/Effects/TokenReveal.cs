@@ -1,4 +1,6 @@
 ﻿using AmongUs.GameOptions;
+using HarmonyLib;
+using TownOfUs.Modules;
 using TownOfUs.Utilities;
 
 namespace ChaosTokens.Modifiers.Effects;
@@ -36,6 +38,14 @@ public class TokenReveal(RoleTypes role, byte source) : TokenEffect<RoleReveal>(
         if (AdditionalModifier?.RevealSource?.AmOwner ?? false)
         {
             Utils.Notification("<b>You revealed the role of a random person!</b>");
+        }
+    }
+    
+    public override void Update()
+    {
+        if (MeetingHud.Instance && !Player.AmOwner)
+        {
+            MeetingMenu.Instances.Do(x => x.HideSingle(Player.PlayerId));
         }
     }
 }
