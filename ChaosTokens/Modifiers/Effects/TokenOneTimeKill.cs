@@ -13,12 +13,19 @@ public class TokenOneTimeKill : TokenEffect
     public override void OnActivate()
     {
         base.OnActivate();
-        CustomButtonSingleton<TokenKillButton>.Instance.SetTimer(10f);
-        CustomButtonSingleton<TokenKillButton>.Instance.Button.gameObject.SetActive(true);
+
+        if (Player.AmOwner)
+        {
+            CustomButtonSingleton<TokenKillButton>.Instance.SetTimer(10f);
+            CustomButtonSingleton<TokenKillButton>.Instance.Button.gameObject.SetActive(true);
+        }
     }
 
     public override void OnDeactivate()
     {
-        CustomButtonSingleton<TokenKillButton>.Instance.Button.gameObject.SetActive(false);
+        if (Player.AmOwner)
+        {
+            CustomButtonSingleton<TokenKillButton>.Instance.Button.gameObject.SetActive(false);
+        }
     }
 }
