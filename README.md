@@ -11,15 +11,18 @@
 </div>
 
 ## About the mod
-The mod adds *Town Of Salem 2* inspired **Chaos Tokens**. Every round, an unspecified amount of players get a token, you can either spend them or save tokens for later. Spending tokens rolls an effect, ranging from positive to negative!
+The mod adds *Town Of Salem 2* inspired **Chaos Tokens**. Every round, an unspecified amount of players get a token, you can either spend them or save tokens for later. Spending tokens rolls an effect, ranging from negative to positive!
+
+More details in the [wiki](https://github.com/xChipseq/ChaosTokens/wiki).
 
 ## Installation
-Find the [latest](https://github.com/xChipseq/ChaosTokens/releases/latest) release, download the .dll file.
+Find the [latest](https://github.com/xChipseq/ChaosTokens/releases/latest) release, download the `.dll` file.
 
 Locate your mod folder and put the downloaded file into the `BepInEx/plugins` folder.
 
 > [!NOTE]
-> This mod is an addon for [Town Of Us Mira](https://github.com/AU-Avengers/TOU-Mira) and requires it in order to work
+> This mod is an addon for [Town Of Us Mira](https://github.com/AU-Avengers/TOU-Mira) and requires it in order to work.
+> 
 > Support for other mods is planned in the future.
 
 -----------------------
