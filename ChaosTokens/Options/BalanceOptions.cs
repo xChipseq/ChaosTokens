@@ -18,8 +18,10 @@ public class BalanceOptions : AbstractOptionGroup
     [ModdedToggleOption("Disable Revival")]
     public bool ReviveDisabled { get; set; } = false;
     
+    /*
     [ModdedToggleOption("Disable Screen Effects")]
     public bool ScreenEffectsDisabled { get; set; } = false;
+    */
     
     [ModdedNumberOption("Max Role Reveals", 0, 15, zeroInfinity: true)]
     public float MaxRoleReveals { get; set; } = 0;
