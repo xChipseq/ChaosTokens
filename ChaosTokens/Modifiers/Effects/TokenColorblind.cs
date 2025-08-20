@@ -1,7 +1,12 @@
 ﻿using System.Collections;
+using HarmonyLib;
 using MiraAPI.Utilities;
 using Reactor.Utilities;
 using Reactor.Utilities.Extensions;
+using TownOfUs.Modifiers.Game.Universal;
+using TownOfUs.Roles.Impostor;
+using TownOfUs.Utilities;
+using TownOfUs.Utilities.Appearances;
 using UnityEngine;
 
 namespace ChaosTokens.Modifiers.Effects;
@@ -19,15 +24,37 @@ public sealed class TokenColorblind : TokenEffect
     public override void OnActivate()
     {
         base.OnActivate();
+        if (!Player.AmOwner) return;
+        
         _filter = Utils.CreatePostprocessFilter(Assets.ColorblindMaterial.LoadAsset());
         Coroutines.Start(CoAnimateFilter(_filter));
+        Helpers.GetAlivePlayers().Do(p =>
+        {
+            if (!p.AmOwner)
+            {
+                p.cosmetics.nameText.gameObject.SetActive(false);
+                p.cosmetics.colorBlindText.gameObject.SetActive(false);
+            }
+        });
     }
 
     public override void OnDeactivate()
     {
         base.OnDeactivate();
-        _filter.gameObject.DestroyImmediate();
-        _filter = null;
+        if (Player.AmOwner)
+        {
+            _filter.gameObject.DestroyImmediate();
+            _filter = null;
+            Helpers.GetAlivePlayers().Do(p =>
+            {
+                if (Player.GetAppearanceType() != TownOfUsAppearances.Swooper &&
+                    Player.GetAppearanceType() != TownOfUsAppearances.Camouflage)
+                {
+                    p.cosmetics.nameText.gameObject.SetActive(true);
+                    p.cosmetics.colorBlindText.gameObject.SetActive(true);
+                }
+            });
+        }
     }
 
     private IEnumerator CoAnimateFilter(SpriteRenderer rend)

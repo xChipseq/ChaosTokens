@@ -41,6 +41,8 @@ public enum RpcCalls : uint
 
 public static class ChaosTokensRpc
 {
+    private static int _revealsLeft = (int)OptionGroupSingleton<BalanceOptions>.Instance.MaxRoleReveals;
+    
     [MethodRpc((uint)RpcCalls.Roll)]
     public static void RpcRoll(this PlayerControl player)
     {
@@ -156,8 +158,6 @@ public static class ChaosTokensRpc
         }
         
         var playerRole = player.Data.Role;
-        int revealCount = ModifierUtils.GetPlayersWithModifier<RevealModifier>().Count();
-
         switch (effect)
         {
             case ChaosEffects.Defense:
@@ -277,14 +277,14 @@ public static class ChaosTokensRpc
                     Reroll();
                     break;
                 }
-                
-                if (revealCount != 0 && revealCount >= OptionGroupSingleton<BalanceOptions>.Instance.MaxRoleReveals)
+                if (_revealsLeft <= 0)
                 {
                     Reroll();
                     break;
                 }
 
                 player.RpcAddModifier<TokenReveal>(player.Data.Role.Role, player.Data.PlayerId);
+                _revealsLeft--;
                 break;
             case ChaosEffects.Death:
                 if (player.HasModifier<TokenDeath>())
@@ -326,7 +326,7 @@ public static class ChaosTokensRpc
                     break;
                 }
                 
-                if (revealCount != 0 && revealCount >= OptionGroupSingleton<BalanceOptions>.Instance.MaxRoleReveals)
+                if (_revealsLeft <= 0)
                 {
                     Reroll();
                     break;
@@ -336,6 +336,7 @@ public static class ChaosTokensRpc
                     .Where(r => r.Team != player.GetTownOfUsRole()?.Team)
                     .Select(r => (r as RoleBehaviour).Role);
                 player.RpcAddModifier<TokenReveal>(validRoles.Random(), player.Data.PlayerId);
+                _revealsLeft--;
                 break;
             case ChaosEffects.Hyperactive:
                 if (player.HasModifier<TokenHyperactive>())
@@ -346,10 +347,8 @@ public static class ChaosTokensRpc
 
                 player.RpcAddModifier<TokenHyperactive>();
                 break;
+            /*
             case ChaosEffects.Nausea:
-                Reroll();
-                break;
-                
                 if (player.HasModifier<TokenColorblind>() || player.HasModifier<TokenNausea>())
                 {
                     Reroll();
@@ -364,14 +363,9 @@ public static class ChaosTokensRpc
 
                 player.RpcAddModifier<TokenNausea>();
                 break;
+            */
             case ChaosEffects.Colorblind:
                 if (player.HasModifier<TokenColorblind>() || player.HasModifier<TokenNausea>())
-                {
-                    Reroll();
-                    break;
-                }
-
-                if (OptionGroupSingleton<BalanceOptions>.Instance.ScreenEffectsDisabled)
                 {
                     Reroll();
                     break;
@@ -382,7 +376,7 @@ public static class ChaosTokensRpc
 
 
             case ChaosEffects.RevealRandom:
-                if (revealCount != 0 && revealCount >= OptionGroupSingleton<BalanceOptions>.Instance.MaxRoleReveals)
+                if (_revealsLeft <= 0)
                 {
                     Reroll();
                     break;
@@ -401,6 +395,7 @@ public static class ChaosTokensRpc
 
                 var revealVictim = revealVictims.Random();
                 revealVictim.RpcAddModifier<TokenReveal>(revealVictim.Data.Role.Role, player.PlayerId);
+                _revealsLeft--;
                 break;
             case ChaosEffects.PositionSwap:
                 var swapVictim = Helpers.GetAlivePlayers()
