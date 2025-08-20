@@ -196,6 +196,11 @@ public static class ChaosTokensRpc
                     Reroll();
                     break;
                 }
+                if (player.HasModifier<TokenInvisible>())
+                {
+                    Reroll();
+                    break;
+                }
 
                 player.RpcAddModifier<TokenTransparent>(Random.RandomRange(0f, 0.8f));
                 break;
@@ -256,6 +261,11 @@ public static class ChaosTokensRpc
                     Reroll();
                     break;
                 }
+                if (player.HasModifier<TokenTransparent>())
+                {
+                    Reroll();
+                    break;
+                }
 
                 player.RpcAddModifier<TokenInvisible>();
                 break;
@@ -310,9 +320,6 @@ public static class ChaosTokensRpc
                 player.RpcAddModifier<TokenDrunk>();
                 break;
             case ChaosEffects.FakeRevealSelf:
-                // The player will reveal as ANY role
-                // disabled, vanilla, ghost roles included
-                // why? because it's funny
                 if (player.HasModifier<TokenReveal>())
                 {
                     Reroll();
@@ -325,7 +332,10 @@ public static class ChaosTokensRpc
                     break;
                 }
 
-                player.RpcAddModifier<TokenReveal>(RoleManager.Instance.AllRoles.Random().Role, player.Data.PlayerId);
+                var validRoles = CustomRoleManager.CustomMiraRoles
+                    .Where(r => r.Team != player.GetTownOfUsRole()?.Team)
+                    .Select(r => (r as RoleBehaviour).Role);
+                player.RpcAddModifier<TokenReveal>(validRoles.Random(), player.Data.PlayerId);
                 break;
             case ChaosEffects.Hyperactive:
                 if (player.HasModifier<TokenHyperactive>())
