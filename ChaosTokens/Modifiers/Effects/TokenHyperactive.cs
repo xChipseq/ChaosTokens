@@ -25,18 +25,21 @@ public sealed class TokenHyperactive : TokenEffect
         {
             EffectActive = !EffectActive;
         }
-        
-        foreach (var ability in CustomButtonManager.Buttons)
-        {
-            random = Random.RandomRangeInt(1, 100);
-            if (random == 1)
-            {
-                if (!ability.Button.isActiveAndEnabled) continue;
-                if (ability.Location == ButtonLocation.BottomLeft) continue; // not the best solution, but stops modifier buttons from being pressed
-                if (!ability.CanClick()) continue;
-                if (ability.EffectActive) continue;
 
-                ability.ClickHandler();
+        if (Player.AmOwner)
+        {
+            foreach (var ability in CustomButtonManager.Buttons)
+            {
+                random = Random.RandomRangeInt(1, 100);
+                if (random == 1)
+                {
+                    if (!ability.Button?.isActiveAndEnabled ?? false) continue;
+                    if (ability.Location == ButtonLocation.BottomLeft) continue; // not the best solution, but stops modifier buttons from being pressed
+                    if (!ability.CanClick()) continue;
+                    if (ability.EffectActive) continue;
+
+                    ability.ClickHandler();
+                }
             }
         }
     }
