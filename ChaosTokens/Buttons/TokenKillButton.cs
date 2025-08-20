@@ -1,5 +1,4 @@
-﻿using AmongUs.GameOptions;
-using ChaosTokens.Modifiers.Effects;
+﻿using ChaosTokens.Modifiers.Effects;
 using MiraAPI.GameOptions;
 using MiraAPI.Hud;
 using MiraAPI.Modifiers;
@@ -53,6 +52,7 @@ public class TokenKillButton : TownOfUsTargetButton<PlayerControl>
 
     protected override void FixedUpdate(PlayerControl playerControl)
     {
+        if (!Button) return;
         Button.graphic.sprite = HudManager.Instance?.KillButton?.graphic?.sprite ?? MiraAssets.Empty.LoadAsset();
         Button.graphic.color = ChaosTokensPlugin.MainColor;
     }

@@ -80,11 +80,25 @@ public class TokenDebugWindow(IntPtr cppPtr) : MonoBehaviour(cppPtr)
         GUILayout.Space(5f);
         GUILayout.Label("Effects");
 
+        var player = PlayerControl.LocalPlayer;
         foreach (var modifier in ModifierManager.Modifiers.OfType<TokenEffect>())
         {
             if (GUILayout.Button(modifier.ModifierName.Replace("Token ", string.Empty)))
             {
-                ChaosTokensRpc.ApplyEffect(PlayerControl.LocalPlayer, modifier.Effect);
+                ChaosTokensRpc.ApplyEffect(player, modifier.Effect);
+            }
+
+            if (modifier.ModifierName == "Token Reveal")
+            {
+                if (GUILayout.Button("Fake Reveal") && !player.HasModifier<TokenReveal>())
+                {
+                    ChaosTokensRpc.ApplyEffect(player, ChaosEffects.FakeRevealSelf);
+                }
+        
+                if (GUILayout.Button("Random Person Reveal"))
+                {
+                    ChaosTokensRpc.ApplyEffect(player, ChaosEffects.RevealRandom);
+                }
             }
         }
                     

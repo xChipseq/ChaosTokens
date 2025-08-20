@@ -1,6 +1,12 @@
-﻿using System.Linq;
+﻿using System.Collections;
+using System.Linq;
 using HarmonyLib;
 using MiraAPI.Modifiers;
+using Reactor.Utilities;
+using Reactor.Utilities.Extensions;
+using TownOfUs;
+using TownOfUs.Utilities;
+using UnityEngine;
 
 namespace ChaosTokens.Modifiers.Effects;
 
@@ -23,6 +29,12 @@ public sealed class TokenMedium : TokenEffect
                 .Where(x => !x.HasModifier<VisibleGhost>())
                 .Do(x => x.AddModifier<VisibleGhost>());
         }
+
+        if (PlayerControl.LocalPlayer.HasDied())
+        {
+            Coroutines.Start(MiscUtils.CoFlash(ChaosTokensPlugin.MainColor, 2));
+            Coroutines.Start(CoArrow(Player));
+        }
     }
 
     public override void OnDeactivate()
@@ -35,5 +47,16 @@ public sealed class TokenMedium : TokenEffect
                 .Where(x => x.HasModifier<VisibleGhost>())
                 .Do(x => x.RemoveModifier<VisibleGhost>());
         }
+    }
+
+    private static IEnumerator CoArrow(PlayerControl player)
+    {
+        var arrow = MiscUtils.CreateArrow(player.transform, TownOfUsColors.Medium);
+        for (float time = 0; time <= 2; time += Time.deltaTime)
+        {
+            arrow.target = player.GetTruePosition();
+            yield return new WaitForEndOfFrame();
+        }
+        arrow.gameObject.Destroy();
     }
 }

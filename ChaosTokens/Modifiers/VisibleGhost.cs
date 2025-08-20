@@ -6,7 +6,7 @@ public sealed class VisibleGhost : BaseModifier
 {
     public override string ModifierName => "Visible Ghost";
     public override bool HideOnUi => true;
-
+    
     public override void FixedUpdate()
     {
         if (!Player.Data.IsDead)
@@ -16,5 +16,10 @@ public sealed class VisibleGhost : BaseModifier
         }
         
         Player.Visible = true;
+    }
+
+    public override void OnDeactivate()
+    {
+        Player.Visible = false;
     }
 }
