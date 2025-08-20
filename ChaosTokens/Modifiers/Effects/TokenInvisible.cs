@@ -1,5 +1,4 @@
 ﻿using System;
-using Reactor.Utilities;
 using TownOfUs.Modifiers.Game.Universal;
 using TownOfUs.Roles.Impostor;
 using TownOfUs.Utilities;
@@ -11,7 +10,7 @@ public sealed class TokenInvisible : TokenEffect
 {
     public override ChaosEffects Effect => ChaosEffects.Invisible;
     public override string ModifierName => "Token Invisible";
-    public override string Notification => "You have now become... invisible?";
+    public override string Notification => "You have now become... invisible?"; // no one got the reference :cry:
     public override bool Negative => false;
 
     private const float InvisDelay = 1f;
