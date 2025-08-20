@@ -21,6 +21,7 @@ public class TokenReveal(RoleTypes role, byte source) : TokenEffect<RoleReveal>(
         base.OnActivate();
 
         FakeReveal = !Player.Is(role);
+        AdditionalModifier.RevealSource = MiscUtils.PlayerById(source);
         
         if (Player.AmOwner && FakeReveal)
         {
