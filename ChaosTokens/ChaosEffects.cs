@@ -14,6 +14,7 @@ public enum ChaosEffects
     Tasks,
     Vision,
     Invisible,
+    Assassin,
     
     // Negative
     RevealSelf,

@@ -17,6 +17,7 @@ using Reactor.Utilities.Extensions;
 using TownOfUs;
 using TownOfUs.Events;
 using TownOfUs.Modifiers;
+using TownOfUs.Modifiers.Game;
 using TownOfUs.Modifiers.Game.Alliance;
 using TownOfUs.Modifiers.Impostor;
 using TownOfUs.Modules;
@@ -268,6 +269,20 @@ public static class ChaosTokensRpc
                 }
 
                 player.RpcAddModifier<TokenInvisible>();
+                break;
+            case ChaosEffects.Assassin:
+                if (player.HasModifier<TokenAssassin>())
+                {
+                    Reroll();
+                    break;
+                }
+                if (player.HasModifier<AssassinModifier>())
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenAssassin>();
                 break;
 
 
