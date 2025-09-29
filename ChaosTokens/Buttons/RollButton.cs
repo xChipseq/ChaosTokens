@@ -2,6 +2,7 @@
 using ChaosTokens.Options;
 using MiraAPI.GameOptions;
 using MiraAPI.Hud;
+using MiraAPI.Keybinds;
 using MiraAPI.Modifiers;
 using MiraAPI.Utilities.Assets;
 using TownOfUs.Buttons;
@@ -17,7 +18,6 @@ public class RollButton : TownOfUsButton
     public override LoadableAsset<Sprite> Sprite => Assets.DiceButton;
     public override Color TextOutlineColor => ChaosTokensPlugin.MainColor;
     public override ButtonLocation Location => ButtonLocation.BottomLeft;
-    public override string Keybind => Keybinds.ModifierAction;
 
     protected override void OnClick()
     {

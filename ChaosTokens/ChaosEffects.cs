@@ -14,6 +14,7 @@ public enum ChaosEffects
     Tasks,
     Vision,
     Invisible,
+    Assassin,
     
     // Negative
     RevealSelf,
@@ -22,8 +23,10 @@ public enum ChaosEffects
     Drunk,
     FakeRevealSelf,
     Hyperactive,
-    Nausea,
+    Nausea, // Unused
     Colorblind,
+    ScreenFlip, // Unused
+    Blind, // Unused
     
     // Neutral
     RevealRandom,

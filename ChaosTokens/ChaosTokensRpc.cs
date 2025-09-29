@@ -17,6 +17,7 @@ using Reactor.Utilities.Extensions;
 using TownOfUs;
 using TownOfUs.Events;
 using TownOfUs.Modifiers;
+using TownOfUs.Modifiers.Game;
 using TownOfUs.Modifiers.Game.Alliance;
 using TownOfUs.Modifiers.Impostor;
 using TownOfUs.Modules;
@@ -269,6 +270,20 @@ public static class ChaosTokensRpc
 
                 player.RpcAddModifier<TokenInvisible>();
                 break;
+            case ChaosEffects.Assassin:
+                if (player.HasModifier<TokenAssassin>())
+                {
+                    Reroll();
+                    break;
+                }
+                if (player.HasModifier<AssassinModifier>())
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenAssassin>();
+                break;
 
 
             case ChaosEffects.RevealSelf:
@@ -373,7 +388,26 @@ public static class ChaosTokensRpc
 
                 player.RpcAddModifier<TokenColorblind>();
                 break;
+            /*
+            case ChaosEffects.ScreenFlip:
+                if (player.HasModifier<TokenScreenFlip>())
+                {
+                    Reroll();
+                    break;
+                }
 
+                player.RpcAddModifier<TokenScreenFlip>();
+                break;
+            case ChaosEffects.Blind:
+                if (player.HasModifier<TokenBlind>() || player.HasModifier<TokenVision>())
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenBlind>();
+                break;
+            */
 
             case ChaosEffects.RevealRandom:
                 if (_revealsLeft <= 0)
@@ -478,6 +512,10 @@ public static class ChaosTokensRpc
                 }
 
                 player.RpcAddModifier<TokenNoSkip>();
+                break;
+            
+            default:
+                Reroll();
                 break;
         }
 

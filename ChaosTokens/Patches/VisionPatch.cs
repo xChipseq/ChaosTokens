@@ -19,6 +19,12 @@ public static class VisionPatch
         if (player != null)
         {
             var pc = MiscUtils.PlayerById(player.PlayerId);
+            if (pc == null) return;
+            
+            if (pc.HasModifier<TokenBlind>())
+            {
+                __result *= 0.1f;
+            }
             if (pc.TryGetModifier<TokenVision>(out var mod))
             {
                 __result *= mod.Multiplier;

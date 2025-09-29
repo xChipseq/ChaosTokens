@@ -201,6 +201,16 @@ public static class TokenEvents
         var target = @event.Target;
         if (target.HasModifier<TokenDefense>())
         {
+            if (source.HasModifier<IndirectAttackerModifier>())
+            {
+                return;
+            }
+
+            if (source == target)
+            {
+                return;
+            }
+            
             @event.Cancel();
             if (source.AmOwner)
             {
