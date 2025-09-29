@@ -388,7 +388,26 @@ public static class ChaosTokensRpc
 
                 player.RpcAddModifier<TokenColorblind>();
                 break;
+            /*
+            case ChaosEffects.ScreenFlip:
+                if (player.HasModifier<TokenScreenFlip>())
+                {
+                    Reroll();
+                    break;
+                }
 
+                player.RpcAddModifier<TokenScreenFlip>();
+                break;
+            case ChaosEffects.Blind:
+                if (player.HasModifier<TokenBlind>() || player.HasModifier<TokenVision>())
+                {
+                    Reroll();
+                    break;
+                }
+
+                player.RpcAddModifier<TokenBlind>();
+                break;
+            */
 
             case ChaosEffects.RevealRandom:
                 if (_revealsLeft <= 0)
@@ -493,6 +512,10 @@ public static class ChaosTokensRpc
                 }
 
                 player.RpcAddModifier<TokenNoSkip>();
+                break;
+            
+            default:
+                Reroll();
                 break;
         }
 
