@@ -42,7 +42,7 @@ public enum RpcCalls : uint
 
 public static class ChaosTokensRpc
 {
-    private static int _revealsLeft = (int)OptionGroupSingleton<BalanceOptions>.Instance.MaxRoleReveals;
+    private static int _revealsLeft { get; set; } = (int)OptionGroupSingleton<BalanceOptions>.Instance.MaxRoleReveals;
     
     [MethodRpc((uint)RpcCalls.Roll)]
     public static void RpcRoll(this PlayerControl player)
