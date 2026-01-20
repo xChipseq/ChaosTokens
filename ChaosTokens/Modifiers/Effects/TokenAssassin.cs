@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using HarmonyLib;
+using Il2CppInterop.Runtime.Attributes;
 using MiraAPI.GameOptions;
 using MiraAPI.Modifiers;
 using MiraAPI.Networking;
@@ -32,6 +33,7 @@ public class TokenAssassin : TokenEffect
     
     private MeetingMenu meetingMenu;
     public string LastGuessedItem { get; set; }
+    [HideFromIl2Cpp]
     public PlayerControl? LastAttemptedVictim { get; set; }
     private bool shot;
     
