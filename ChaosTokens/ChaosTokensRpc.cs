@@ -34,7 +34,7 @@ public enum RpcCalls : uint
     Roll,
     IncreaseTokens,
     DecreaseTokens,
-    
+
     TokenPosSwap,
     TokenRoleSwap,
     TokenRevive,
@@ -42,8 +42,8 @@ public enum RpcCalls : uint
 
 public static class ChaosTokensRpc
 {
-    private static int _revealsLeft { get; set; } = (int)OptionGroupSingleton<BalanceOptions>.Instance.MaxRoleReveals;
-    
+    public static int RevealsLeft { get; set; }
+
     [MethodRpc((uint)RpcCalls.Roll)]
     public static void RpcRoll(this PlayerControl player)
     {
@@ -54,7 +54,7 @@ public static class ChaosTokensRpc
         {
             return;
         }
-        
+
         bool reroll = true;
         do
         {
@@ -67,7 +67,7 @@ public static class ChaosTokensRpc
 
         RpcDecreaseTokens(player, 1);
     }
-    
+
     [MethodRpc((uint)RpcCalls.IncreaseTokens)]
     public static void RpcIncreaseTokens(this PlayerControl player, int amount, bool showNotification = false)
     {
@@ -90,16 +90,16 @@ public static class ChaosTokensRpc
             Logger<ChaosTokensPlugin>.Error($"Cannot decrease tokens: player {player.Data.PlayerName} has no modifier");
             return;
         }
-        
+
         chaosTokenModifier.DecreaseTokens(amount);
     }
-    
+
     [MethodRpc((uint)RpcCalls.TokenPosSwap)]
     public static void RpcTokenPositionSwap(PlayerControl player, PlayerControl victim)
     {
         Vector3 pos1 = player.GetTruePosition();
         Vector3 pos2 = victim.GetTruePosition();
-               
+
         TransporterRole.Transport(player, pos2);
         TransporterRole.Transport(victim, pos1);
 
@@ -107,13 +107,13 @@ public static class ChaosTokensRpc
         {
             Utils.Notification("<b>You swapped positions with someone!</b>");
         }
-        
+
         if (victim.AmOwner)
         {
             Utils.Notification("<b>Someone swapped positions with you!</b>");
         }
     }
-    
+
     [MethodRpc((uint)RpcCalls.TokenRoleSwap)]
     public static void RpcTokenRoleSwap(PlayerControl player, PlayerControl victim)
     {
@@ -125,7 +125,7 @@ public static class ChaosTokensRpc
         {
             Utils.Notification("<b>Someone swapped roles with you!</b>");
         }
-        
+
         RoleTypes role1 = player.Data.Role.Role;
         RoleTypes role2 = victim.Data.Role.Role;
 
@@ -157,7 +157,7 @@ public static class ChaosTokensRpc
         {
             reroll = true;
         }
-        
+
         var playerRole = player.Data.Role;
         switch (effect)
         {
@@ -238,7 +238,7 @@ public static class ChaosTokensRpc
                     Reroll();
                     break;
                 }
-                
+
                 if (!Utils.GetUncompletedTasks(player).Any())
                 {
                     Reroll();
@@ -292,14 +292,14 @@ public static class ChaosTokensRpc
                     Reroll();
                     break;
                 }
-                if (_revealsLeft <= 0)
+                if (RevealsLeft <= 0)
                 {
                     Reroll();
                     break;
                 }
 
                 player.RpcAddModifier<TokenReveal>(player.Data.Role.Role, player.Data.PlayerId);
-                _revealsLeft--;
+                RevealsLeft--;
                 break;
             case ChaosEffects.Death:
                 if (player.HasModifier<TokenDeath>())
@@ -340,8 +340,8 @@ public static class ChaosTokensRpc
                     Reroll();
                     break;
                 }
-                
-                if (_revealsLeft <= 0)
+
+                if (RevealsLeft <= 0)
                 {
                     Reroll();
                     break;
@@ -351,7 +351,7 @@ public static class ChaosTokensRpc
                     .Where(r => r.Team != player.GetTownOfUsRole()?.Team)
                     .Select(r => (r as RoleBehaviour).Role);
                 player.RpcAddModifier<TokenReveal>(validRoles.Random(), player.Data.PlayerId);
-                _revealsLeft--;
+                RevealsLeft--;
                 break;
             case ChaosEffects.Hyperactive:
                 if (player.HasModifier<TokenHyperactive>())
@@ -410,7 +410,7 @@ public static class ChaosTokensRpc
             */
 
             case ChaosEffects.RevealRandom:
-                if (_revealsLeft <= 0)
+                if (RevealsLeft <= 0)
                 {
                     Reroll();
                     break;
@@ -429,7 +429,7 @@ public static class ChaosTokensRpc
 
                 var revealVictim = revealVictims.Random();
                 revealVictim.RpcAddModifier<TokenReveal>(revealVictim.Data.Role.Role, player.PlayerId);
-                _revealsLeft--;
+                RevealsLeft--;
                 break;
             case ChaosEffects.PositionSwap:
                 var swapVictim = Helpers.GetAlivePlayers()
@@ -480,7 +480,7 @@ public static class ChaosTokensRpc
                     Reroll();
                     break;
                 }
-                
+
                 var canBeRevived = PlayerControl.AllPlayerControls
                     .ToArray()
                     .Where(x => x.Data.IsDead && !x.Data.Disconnected)
@@ -513,7 +513,7 @@ public static class ChaosTokensRpc
 
                 player.RpcAddModifier<TokenNoSkip>();
                 break;
-            
+
             default:
                 Reroll();
                 break;
@@ -521,7 +521,7 @@ public static class ChaosTokensRpc
 
         return reroll;
     }
-    
+
     public static IEnumerator CoRevivePlayer(PlayerControl dead)
     {
         var roleWhenAlive = dead.GetRoleWhenAlive();
