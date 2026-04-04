@@ -1,9 +1,9 @@
 ﻿using System.Linq;
 using HarmonyLib;
+using Il2CppInterop.Runtime.Attributes;
 using MiraAPI.GameOptions;
 using MiraAPI.Modifiers;
 using MiraAPI.Networking;
-using MiraAPI.Roles;
 using MiraAPI.Utilities;
 using Reactor.Utilities;
 using TownOfUs;
@@ -20,21 +20,22 @@ using TownOfUs.Roles;
 using TownOfUs.Roles.Crewmate;
 using TownOfUs.Roles.Neutral;
 using TownOfUs.Utilities;
-using UnityEngine;
 
 namespace ChaosTokens.Modifiers.Effects;
 
 public class TokenAssassin : TokenEffect
 {
     public override string ModifierName => "Token Assassin";
+    public override string Notification => "You can attempt to guess a player's role during the next meeting.";
     public override ChaosEffects Effect => ChaosEffects.Assassin;
     public override bool Negative => false;
-    
+    public override bool RemoveAfterMeeting => true;
+
     private MeetingMenu meetingMenu;
     public string LastGuessedItem { get; set; }
-    public PlayerControl? LastAttemptedVictim { get; set; }
-    private bool shot;
-    
+    [HideFromIl2Cpp]
+    public PlayerControl LastAttemptedVictim { get; set; }
+
     public override void OnActivate()
     {
         base.OnActivate();
@@ -86,7 +87,7 @@ public class TokenAssassin : TokenEffect
         {
             return;
         }
-        
+
         if (Minigame.Instance != null)
         {
             return;
@@ -137,27 +138,19 @@ public class TokenAssassin : TokenEffect
                 shapeMenu.Close();
                 LastGuessedItem = string.Empty;
                 LastAttemptedVictim = null;
-
+                Utils.Notification("Your target was blessed.");
+                Player.RpcRemoveModifier<TokenAssassin>();
                 return;
             }
 
-            if (victim == Player && Player.TryGetModifier<DoubleShotModifier>(out var modifier) && !modifier.Used)
+            if (victim == Player)
             {
-                modifier!.Used = true;
-
                 Coroutines.Start(MiscUtils.CoFlash(TownOfUsColors.Impostor));
-
-                var notif1 = Helpers.CreateAndShowNotification(
-                    $"<b>{TownOfUsColors.ImpSoft.ToTextColor()}Your Double Shot has prevented you from dying this meeting!</color></b>",
-                    Color.white, spr: TouModifierIcons.DoubleShot.LoadAsset());
-
-                notif1.Text.SetOutlineThickness(0.35f);
-                notif1.transform.localPosition = new Vector3(0f, 1f, -20f);
-
+                Utils.Notification("Your guess was incorrect.");
                 shapeMenu.Close();
                 LastGuessedItem = string.Empty;
                 LastAttemptedVictim = null;
-
+                Player.RpcRemoveModifier<TokenAssassin>();
                 return;
             }
 
@@ -171,19 +164,11 @@ public class TokenAssassin : TokenEffect
                 MeetingMenu.Instances.Do(x => x.HideSingle(victim.PlayerId));
                 DeathHandlerModifier.RpcUpdateDeathHandler(victim, "Guessed", DeathEventHandlers.CurrentRound, DeathHandlerOverride.SetFalse, $"By {Player.Data.PlayerName}", lockInfo: DeathHandlerOverride.SetTrue);
             }
-            else
-            {
-                DeathHandlerModifier.RpcUpdateDeathHandler(victim, "Misguessed", DeathEventHandlers.CurrentRound, DeathHandlerOverride.SetFalse, lockInfo: DeathHandlerOverride.SetTrue);
-            }
-
-            if (!OptionGroupSingleton<AssassinOptions>.Instance.AssassinMultiKill || victim == Player)
-            {
-                meetingMenu?.HideButtons();
-            }
 
             shapeMenu.Close();
-            meetingMenu.HideButtons();
-            shot = true;
+            meetingMenu!.HideButtons();
+            Player.RpcRemoveModifier<TokenAssassin>();
+            Utils.Notification("You have guessed correctly.");
         }
     }
 
@@ -209,58 +194,15 @@ public class TokenAssassin : TokenEffect
             return false;
         }
 
-        var options = OptionGroupSingleton<AssassinOptions>.Instance;
         var touRole = role as ITownOfUsRole;
-        var assassinRole = Player.Data.Role as ITownOfUsRole;
         var unguessableRole = role as IUnguessable;
 
-        if (touRole is IGhostRole)
+        if (touRole is IGhostRole || unguessableRole is { IsGuessable: false })
         {
             return false;
         }
 
-        if (unguessableRole != null && !unguessableRole.IsGuessable)
-        {
-            return false;
-        }
-
-        if (touRole?.RoleAlignment == RoleAlignment.CrewmateInvestigative)
-        {
-            return options.AssassinGuessInvest;
-        }
-
-        if (role.IsCrewmate() && role is ICustomRole)
-        {
-            return true;
-        }
-
-        if (role.IsCrewmate() && OptionGroupSingleton<AssassinOptions>.Instance.AssassinCrewmateGuess)
-        {
-            return true;
-        }
-
-        if (role.IsImpostor() && OptionGroupSingleton<AssassinOptions>.Instance.AssassinGuessImpostors &&
-            assassinRole?.Team != ModdedRoleTeams.Impostor)
-        {
-            return true;
-        }
-
-        if (touRole?.RoleAlignment == RoleAlignment.NeutralBenign)
-        {
-            return options.AssassinGuessNeutralBenign;
-        }
-
-        if (touRole?.RoleAlignment == RoleAlignment.NeutralEvil)
-        {
-            return options.AssassinGuessNeutralEvil;
-        }
-
-        if (touRole?.RoleAlignment == RoleAlignment.NeutralKilling)
-        {
-            return options.AssassinGuessNeutralKilling;
-        }
-
-        return false;
+        return true;
     }
 
     private static bool IsModifierValid(BaseModifier modifier)

@@ -16,19 +16,19 @@ public class TokenHandingOptions : AbstractOptionGroup
 
     [ModdedToggleOption("Hand Tokens First Round")]
     public bool TokensEnabledFirstRound { get; set; } = true;
-    
-    [ModdedToggleOption("Enable Token Handing Priority")]
-    public bool TokenHandingPriority { get; set; } = true;
-    
+
+    [ModdedToggleOption("Enable Weighted Token")]
+    public bool WeightedTokens { get; set; } = true;
+
     [ModdedNumberOption("Handed Tokens Min", 1, 30)]
     public float TokensMin { get; set; } = 5;
-    
+
     [ModdedNumberOption("Handed Tokens Max", 0, 30, zeroInfinity: true)]
     public float TokensMax { get; set; } = 10;
-    
+
     [ModdedNumberOption("Initial Double Token Chance", 0, 100, 10, MiraNumberSuffixes.Percent)]
     public float InitialDoubleTokenChance { get; set; } = 10;
-    
+
     [ModdedNumberOption("Double Token Chance Increase Per Round", 5, 50, 5, MiraNumberSuffixes.Percent)]
     public float DoubleTokenIncrease { get; set; } = 10;
 }

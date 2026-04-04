@@ -25,16 +25,17 @@ namespace ChaosTokens;
 public static class TokenEvents
 {
     private static float DoubleTokenChance { get; set; } = OptionGroupSingleton<TokenHandingOptions>.Instance.InitialDoubleTokenChance;
-    private static readonly Dictionary<byte, float> PriorityTable = new();
-    
+    private static readonly Dictionary<byte, float> WeightTable = new();
+
     [RegisterEvent]
     public static void HandleVotesEventHandler(HandleVoteEvent @event)
     {
         if (@event.TargetId == 253 && ModifierUtils.GetPlayersWithModifier<TokenNoSkip>().Any())
         {
             @event.Cancel();
+            return;
         }
-        
+
         if (@event.VoteData.Owner.HasModifier<TokenVotes>())
         {
             @event.VoteData.SetRemainingVotes(0);
@@ -63,7 +64,7 @@ public static class TokenEvents
             @event.Cancel();
         }
     }
-    
+
     [RegisterEvent]
     public static void VotingCompleteEventHandler(VotingCompleteEvent @event)
     {
@@ -71,7 +72,7 @@ public static class TokenEvents
         {
             player.CustomMurder(player, MurderResultFlags.Succeeded, createDeadBody: false, showKillAnim: false);
             DeathHandlerModifier.UpdateDeathHandler(player, "Fate");
-            
+
             // ToUM adds time when someone dies during a meeting, because of that the proceed anim is longer
             // We add the time it subtracted to fix this
             var timer = (int)OptionGroupSingleton<TownOfUs.Options.GeneralOptions>.Instance.AddedMeetingDeathTimer;
@@ -123,75 +124,55 @@ public static class TokenEvents
         }
         if (@event.TriggeredByIntro)
         {
-            PriorityTable.Clear();
+            WeightTable.Clear();
             PlayerControl.AllPlayerControls
                 .ToArray()
-                .Do(p => PriorityTable.Add(p.PlayerId, 10));
-            
+                .Do(p => WeightTable.Add(p.PlayerId, 10));
+
             if (!OptionGroupSingleton<TokenHandingOptions>.Instance.TokensEnabledFirstRound)
             {
                 return;
             }
         }
 
-        int min = (int)OptionGroupSingleton<TokenHandingOptions>.Instance.TokensMin;
-        int max = (int)OptionGroupSingleton<TokenHandingOptions>.Instance.TokensMax;
-
+        var min = (int)OptionGroupSingleton<TokenHandingOptions>.Instance.TokensMin;
+        var max = (int)OptionGroupSingleton<TokenHandingOptions>.Instance.TokensMax;
         if (max == 0)
         {
             max = int.MaxValue;
         }
-
         if (min > max)
         {
             min = max;
         }
 
         var potentialPlayers = Helpers.GetAlivePlayers();
-        potentialPlayers.Do(p =>
-        {
-            // Just to be sure
-            if (!PriorityTable.ContainsKey(p.PlayerId))
-            {
-                PriorityTable.Add(p.PlayerId, 10);
-            }
-        });
-        potentialPlayers.Shuffle();
-        potentialPlayers = potentialPlayers.OrderBy(x => PriorityTable[x.PlayerId]).ToList();
-        
-        int tokensToHandle = Mathf.Clamp(Random.RandomRangeInt(min, max), 0, potentialPlayers.Count);
-        foreach (var player in potentialPlayers.Clone())
-        {
-            // Reset when player gets a token
-            PriorityTable[player.PlayerId] = 10;
-            
-            int tokens = 1;
-            if (Random.RandomRangeInt(1, 100) < DoubleTokenChance && tokensToHandle > 1)
-            {
-                tokens = 2;
-                PriorityTable[player.PlayerId] = 11; // double token decreases the priority
-            }
+        min = Mathf.Min(min, potentialPlayers.Count);
+        max = Mathf.Min(max, potentialPlayers.Count);
 
+        var tokensToHand = Mathf.Min(Random.RandomRangeInt(min, max + 1), potentialPlayers.Count);
+        var winners = WeightedSample(potentialPlayers, WeightTable, tokensToHand, 3);
+        foreach (var player in winners)
+        {
+            int tokens = Random.RandomRangeInt(1, 100) < DoubleTokenChance ? 2 : 1;
             player.RpcIncreaseTokens(tokens, true);
-            
-            tokensToHandle -= tokens;
-            potentialPlayers.Remove(player);
-            if (tokensToHandle <= 0)
-            {
-                break;
-            }
         }
-        
-        // Players without a token get priority for the next handing
-        potentialPlayers.Do(p => PriorityTable[p.PlayerId]--);
 
-        // Simplest solution to ignore handing priority: reset everything if disabled
-        if (!OptionGroupSingleton<TokenHandingOptions>.Instance.TokenHandingPriority)
+        // i mean if we reset the weights table, everyone's chance is still the same?
+        if (!OptionGroupSingleton<TokenHandingOptions>.Instance.WeightedTokens)
         {
-            potentialPlayers.Do(p => PriorityTable[p.PlayerId] = 10);
+            potentialPlayers.Do(p => WeightTable[p.PlayerId] = 10);
         }
-        
-        DoubleTokenChance = Mathf.Clamp(DoubleTokenChance + OptionGroupSingleton<TokenHandingOptions>.Instance.DoubleTokenIncrease, 0, 100);
+
+        var doubleChance = DoubleTokenChance + OptionGroupSingleton<TokenHandingOptions>.Instance.DoubleTokenIncrease;
+        DoubleTokenChance = Mathf.Clamp(doubleChance, 0, 100);
+    }
+
+    [RegisterEvent]
+    public static void GameStartEventRegister(IntroBeginEvent @event)
+    {
+        ChaosTokensRpc.RevealsLeft = (int)OptionGroupSingleton<BalanceOptions>.Instance.MaxRoleReveals;
+        ChaosTokensRpc.SwapsLeft = (int)OptionGroupSingleton<BalanceOptions>.Instance.MaxRoleSwaps;
     }
 
     [RegisterEvent]
@@ -210,7 +191,7 @@ public static class TokenEvents
             {
                 return;
             }
-            
+
             @event.Cancel();
             if (source.AmOwner)
             {
@@ -219,5 +200,44 @@ public static class TokenEvents
                 Utils.Notification("Skill issue", true);
             }
         }
+    }
+
+    private static PlayerControl[] WeightedSample(List<PlayerControl> players, Dictionary<byte, float> weights, int n, float adjustment)
+    {
+        var pool = new List<PlayerControl>(players);
+        var winners = new List<PlayerControl>();
+        var rng = new System.Random();
+
+        for (int i = 0; i < n; i++)
+        {
+            float total = pool.Sum(p => weights[p.PlayerId]);
+            float roll = (float)rng.NextDouble() * total;
+            float cumulative = 0;
+
+            foreach (var player in pool)
+            {
+                cumulative += weights[player.PlayerId];
+                if (roll < cumulative)
+                {
+                    winners.Add(player);
+                    pool.Remove(player);
+                    break;
+                }
+            }
+        }
+
+        foreach (var player in players)
+        {
+            if (winners.Contains(player))
+            {
+                weights[player.PlayerId] = Mathf.Max(1, weights[player.PlayerId] - adjustment);
+            }
+            else
+            {
+                weights[player.PlayerId] += adjustment;
+            }
+        }
+
+        return winners.ToArray();
     }
 }
