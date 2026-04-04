@@ -3,9 +3,8 @@
         <TargetFramework>net6.0</TargetFramework>
         <LangVersion>latest</LangVersion>
         <DebugType>embedded</DebugType>
-
         <Authors>Chipseq</Authors>
-        <Version>1.1.3</Version>
+        <Version>1.2.0</Version>
     </PropertyGroup>
 
     <ItemGroup>
