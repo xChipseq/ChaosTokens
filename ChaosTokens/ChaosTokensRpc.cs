@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Linq;
-using AmongUs.GameOptions;
 using ChaosTokens.Modifiers;
 using ChaosTokens.Modifiers.Effects;
 using ChaosTokens.Options;
@@ -43,6 +42,7 @@ public enum RpcCalls : uint
 public static class ChaosTokensRpc
 {
     public static int RevealsLeft { get; set; }
+    public static int SwapsLeft { get; set; }
 
     [MethodRpc((uint)RpcCalls.Roll)]
     public static void RpcRoll(this PlayerControl player)
@@ -55,17 +55,16 @@ public static class ChaosTokensRpc
             return;
         }
 
-        bool reroll = true;
+        bool reroll;
         do
         {
-            reroll = false;
             int random = Random.RandomRangeInt(0, Enum.GetValues<ChaosEffects>().Length);
             //Logger<ChaosTokensPlugin>.Warning($"Rolled effect for {player.Data.PlayerName} - {(ChaosEffects)random}");
             reroll = ApplyEffect(player, (ChaosEffects)random);
 
         } while (reroll);
 
-        RpcDecreaseTokens(player, 1);
+        player.RpcDecreaseTokens(1);
     }
 
     [MethodRpc((uint)RpcCalls.IncreaseTokens)]
@@ -74,7 +73,7 @@ public static class ChaosTokensRpc
         if (!player.TryGetModifier<ChaosTokenModifier>(out var chaosTokenModifier))
         {
             //Logger<ChaosTokensPlugin>.Error($"Cannot increase tokens: player {player.Data.PlayerName} has no modifier, adding one");
-            chaosTokenModifier = player.AddModifier<ChaosTokenModifier>(amount, showNotification);
+            player.AddModifier<ChaosTokenModifier>(amount, showNotification);
         }
         else
         {
@@ -126,8 +125,8 @@ public static class ChaosTokensRpc
             Utils.Notification("<b>Someone swapped roles with you!</b>");
         }
 
-        RoleTypes role1 = player.Data.Role.Role;
-        RoleTypes role2 = victim.Data.Role.Role;
+        var role1 = player.Data.Role.Role;
+        var role2 = victim.Data.Role.Role;
 
         player.ChangeRole((ushort)role2);
         victim.ChangeRole((ushort)role1);
@@ -439,6 +438,12 @@ public static class ChaosTokensRpc
                 RpcTokenPositionSwap(player, swapVictim);
                 break;
             case ChaosEffects.RoleSwap:
+                if (SwapsLeft <= 0)
+                {
+                    Reroll();
+                    break;
+                }
+
                 // This will be annoying as hell but the players have to be on the same team so it's kind of balanced
                 ModdedRoleTeams playerTeam;
                 if (playerRole is ICustomRole customRole)
@@ -473,6 +478,7 @@ public static class ChaosTokensRpc
                 }
 
                 RpcTokenRoleSwap(player, roleSwapVictims.Random());
+                SwapsLeft--;
                 break;
             case ChaosEffects.Revive:
                 if (OptionGroupSingleton<BalanceOptions>.Instance.ReviveDisabled)

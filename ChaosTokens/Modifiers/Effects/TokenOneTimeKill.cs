@@ -7,7 +7,7 @@ public class TokenOneTimeKill : TokenEffect
 {
     public override ChaosEffects Effect => ChaosEffects.KillButton;
     public override string ModifierName => "Token Kill Button";
-    public override string Notification => "You've gained a one-time-use kill button, take things into your own hands!";
+    public override string Notification => "You've gained a one-time-use kill button, use it wisely!";
     public override bool Negative => false;
 
     public override void OnActivate()
