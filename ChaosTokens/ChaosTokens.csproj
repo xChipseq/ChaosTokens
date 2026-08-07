@@ -4,12 +4,13 @@
         <LangVersion>latest</LangVersion>
         <DebugType>embedded</DebugType>
         <Authors>Chipseq</Authors>
-        <Version>1.2.0</Version>
+        <Version>1.2.1</Version>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AllOfUs.MiraAPI" Version="0.3.0" />
-        <PackageReference Include="Reactor" Version="2.3.1" />
+        <PackageReference Include="AllOfUs.MiraAPI" Version="0.4.3" />
+        <PackageReference Include="Reactor" Version="2.5.1-ci.384" />
+        <PackageReference Include="TownOfUsMira" Version="1.7.1" />
         <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.735" Private="false" ExcludeAssets="runtime;native" />
         <PackageReference Include="AmongUs.GameLibs.Steam" Version="2025.3.31" PrivateAssets="all" />
 
