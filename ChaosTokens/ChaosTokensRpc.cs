@@ -490,7 +490,7 @@ public static class ChaosTokensRpc
                 var canBeRevived = PlayerControl.AllPlayerControls
                     .ToArray()
                     .Where(x => x.Data.IsDead && !x.Data.Disconnected)
-                    .Where(x => x.GetModifier<DeathHandlerModifier>()?.RoundOfDeath == DeathEventHandlers.CurrentRound)
+                    .Where(x => !x.DiedOtherRound())
                     .ToList();
 
                 if (canBeRevived.Count <= 0)

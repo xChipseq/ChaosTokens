@@ -71,7 +71,6 @@ public static class TokenEvents
         ModifierUtils.GetPlayersWithModifier<TokenDeath>().Do(player =>
         {
             player.CustomMurder(player, MurderResultFlags.Succeeded, createDeadBody: false, showKillAnim: false);
-            DeathHandlerModifier.UpdateDeathHandler(player, "Fate");
 
             // ToUM adds time when someone dies during a meeting, because of that the proceed anim is longer
             // We add the time it subtracted to fix this

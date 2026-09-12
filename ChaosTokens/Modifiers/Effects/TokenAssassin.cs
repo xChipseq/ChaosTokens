@@ -83,7 +83,7 @@ public class TokenAssassin : TokenEffect
 
     public void ClickGuess(PlayerVoteArea voteArea, MeetingHud meetingHud)
     {
-        if (meetingHud.state == MeetingHud.VoteStates.Discussion)
+        if (meetingHud.state == MeetingHud.MeetingStates.Discussion)
         {
             return;
         }
@@ -93,7 +93,7 @@ public class TokenAssassin : TokenEffect
             return;
         }
 
-        var player = GameData.Instance.GetPlayerById(voteArea.TargetPlayerId).Object;
+        var player = GameData.Instance.GetPlayerById(voteArea.PlayerId).Object;
 
         var shapeMenu = GuesserMenu.Create();
         shapeMenu.Begin(IsRoleValid, ClickRoleHandle, IsModifierValid, ClickModifierHandle);
@@ -162,7 +162,6 @@ public class TokenAssassin : TokenEffect
                 LastGuessedItem = string.Empty;
                 LastAttemptedVictim = null;
                 MeetingMenu.Instances.Do(x => x.HideSingle(victim.PlayerId));
-                DeathHandlerModifier.RpcUpdateDeathHandler(victim, "Guessed", DeathEventHandlers.CurrentRound, DeathHandlerOverride.SetFalse, $"By {Player.Data.PlayerName}", lockInfo: DeathHandlerOverride.SetTrue);
             }
 
             shapeMenu.Close();
@@ -175,7 +174,7 @@ public class TokenAssassin : TokenEffect
     public bool IsExempt(PlayerVoteArea voteArea)
     {
         var votePlayer = voteArea.GetPlayer();
-        return voteArea?.TargetPlayerId == Player.PlayerId ||
+        return voteArea.PlayerId == Player.PlayerId ||
                Player.Data.IsDead ||
                voteArea!.AmDead ||
                (Player.IsImpostor() && votePlayer?.IsImpostor() == true &&
